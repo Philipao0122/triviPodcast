@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia: Habilidades Blandas y IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            border-radius: 1.5rem;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #818cf8; /* indigo-400 */
+        }
+        .correct {
+            background-color: #10B981 !important; /* Emerald 500 */
+            color: white !important;
+            border-color: #059669 !important; /* Emerald 600 */
+            transform: scale(1.02);
+        }
+        .incorrect {
+            background-color: #EF4444 !important; /* Red 500 */
+            color: white !important;
+            border-color: #DC2626 !important; /* Red 600 */
+        }
+        .disabled {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 via-blue-500 to-teal-400 flex items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="card w-full max-w-2xl text-center bg-white/80 backdrop-blur-md shadow-2xl">
+        <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Mentes que Lideran el Futuro</h1>
+        <p class="text-gray-700 font-medium mb-6">Habilidades Blandas para la Era de la IA</p>
+
+        <div id="question-area" class="text-left">
+            <div class="flex justify-between items-center mb-4">
+                <span id="category-badge" class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Categoría</span>
+                <p id="progress-text" class="text-sm text-gray-600">Pregunta 1 de 10</p>
+            </div>
+            <h2 id="question-text" class="text-2xl font-semibold text-gray-800 mb-6">Cargando pregunta...</h2>
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Las opciones se generarán aquí -->
+            </div>
+        </div>
+        
+        <div id="result-area" class="hidden mt-6 text-center">
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">¡Trivia Completada!</h2>
+            <p class="text-2xl text-gray-600 mb-6">Tu puntuación final es:</p>
+            <p id="final-score" class="text-6xl font-bold text-indigo-600 mb-8">0 / 10</p>
+            <button id="restart-btn" class="w-full bg-gradient-to-r from-blue-500 to-teal-600 text-white font-bold py-3 px-6 rounded-xl hover:opacity-90 transition-all duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                Jugar de Nuevo
+            </button>
+        </div>
+
+        <div class="mt-8">
+            <button id="next-btn" class="w-1/2 bg-gradient-to-r from-blue-500 to-teal-600 text-white font-bold py-3 px-6 rounded-xl hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 hidden">
+                Siguiente
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+            // Comunicación Efectiva y Empatía
+            {
+                category: "Comunicación y Empatía",
+                question: "¿Por qué es fundamental la comunicación efectiva al explicar la IA a no expertos?",
+                options: ["Para demostrar superioridad técnica", "Para construir puentes entre lo técnico y lo práctico", "Para confundir a la competencia", "No es importante en la IA"],
+                answer: "Para construir puentes entre lo técnico y lo práctico"
+            },
+            {
+                category: "Comunicación y Empatía",
+                question: "¿Qué habilidad blanda es esencial para diseñar chatbots que sean realmente útiles y empáticos con el usuario?",
+                options: ["Programación avanzada", "Análisis de datos puros", "Empatía", "Gestión de proyectos"],
+                answer: "Empatía"
+            },
+            // Trabajo en Equipo Interdisciplinario
+            {
+                category: "Trabajo en Equipo",
+                question: "Además de ingenieros, ¿qué profesionales son clave en equipos de IA para crear interfaces intuitivas?",
+                options: ["Contadores y auditores", "Abogados corporativos", "Diseñadores de experiencia de usuario (UX)", "Músicos y artistas"],
+                answer: "Diseñadores de experiencia de usuario (UX)"
+            },
+            {
+                category: "Trabajo en Equipo",
+                question: "En un asistente de IA para salud, ¿qué rol es crucial además del ingeniero para aportar experiencia clínica?",
+                options: ["Arquitectos de software", "Médicos y especialistas clínicos", "Chefs y nutricionistas", "Historiadores de la medicina"],
+                answer: "Médicos y especialistas clínicos"
+            },
+            // Pensamiento Crítico y Ética
+            {
+                category: "Pensamiento Crítico y Ética",
+                question: "¿Qué habilidad es esencial para evaluar los resultados de la IA, identificar sesgos y tomar decisiones informadas?",
+                options: ["Obediencia a los datos", "Pensamiento crítico", "Velocidad de escritura de código", "Memoria fotográfica"],
+                answer: "Pensamiento crítico"
+            },
+            {
+                category: "Pensamiento Crítico y Ética",
+                question: "Si un algoritmo de selección de personal se entrena con datos históricos sesgados, ¿qué riesgo principal existe?",
+                options: ["El algoritmo será más justo que los humanos", "Perpetuará y amplificará la discriminación", "Funcionará más rápido y será más eficiente", "No habrá ningún riesgo ético"],
+                answer: "Perpetuará y amplificará la discriminación"
+            },
+            // Adaptabilidad y Aprendizaje Continuo
+            {
+                category: "Adaptabilidad y Aprendizaje",
+                question: "¿Cuál es considerada la habilidad más crucial en un campo tan dinámico y cambiante como la IA?",
+                options: ["Resistencia al cambio", "Conocimiento estático y fijo", "Ignorar las nuevas tendencias", "Adaptabilidad"],
+                answer: "Adaptabilidad"
+            },
+            {
+                category: "Adaptabilidad y Aprendizaje",
+                question: "¿Qué implica 'aprender a desaprender y reaprender' en el contexto de la evolución constante de la IA?",
+                options: ["Olvidar todo lo aprendido previamente", "Aferrarse a los métodos antiguos", "Descartar conocimientos obsoletos y adoptar nuevos enfoques", "Ignorar la formación continua"],
+                answer: "Descartar conocimientos obsoletos y adoptar nuevos enfoques"
+            },
+            // Creatividad e Innovación
+            {
+                category: "Creatividad e Innovación",
+                question: "Para ir más allá de replicar procesos y explorar soluciones novedosas con IA, ¿qué habilidad es fundamental?",
+                options: ["Seguir instrucciones al pie de la letra", "Creatividad", "Evitar riesgos a toda costa", "Hacer siempre las cosas de la misma manera"],
+                answer: "Creatividad"
+            },
+             {
+                category: "Creatividad e Innovación",
+                question: "En el arte, ¿cómo actúa la IA principalmente?",
+                options: ["Reemplazando completamente la visión del artista", "Como una herramienta que amplía las posibilidades expresivas", "Limitando la creatividad a patrones fijos", "Solo copiando estilos de artistas famosos"],
+                answer: "Como una herramienta que amplía las posibilidades expresivas"
+            },
+            // Liderazgo y Gestión del Cambio
+            {
+                category: "Liderazgo y Gestión",
+                question: "Además del conocimiento técnico, ¿qué tipo de inteligencia es fundamental para el liderazgo en la era de la IA?",
+                options: ["Inteligencia Artificial", "Inteligencia Emocional", "Memoria a corto plazo", "Conocimiento enciclopédico"],
+                answer: "Inteligencia Emocional"
+            },
+            // Estrategia y Negociación
+            {
+                category: "Estrategia y Negociación",
+                question: "¿Qué habilidad permite alinear expectativas y resolver conflictos durante la adopción de una nueva tecnología de IA?",
+                options: ["Imposición autoritaria", "Evasión de los conflictos", "Negociación efectiva", "Ignorar las opiniones de los demás"],
+                answer: "Negociación efectiva"
+            },
+            // Diversidad y Manejo de la Ambigüedad
+            {
+                category: "Diversidad y Ambigüedad",
+                question: "¿Cómo se puede evitar que los sistemas de IA reflejen los sesgos y prejuicios de sus creadores?",
+                options: ["Contratando solo a personas con la misma formación", "Usando datos de una única fuente confiable", "Asegurando la diversidad en los equipos de desarrollo", "Ignorando el problema de los sesgos"],
+                answer: "Asegurando la diversidad en los equipos de desarrollo"
+            },
+            // Casos Reales y Ejemplos de IA
+            {
+                category: "Casos Reales",
+                question: "En la aplicación de IA para diagnóstico médico, ¿por qué es crucial el pensamiento crítico del profesional de la salud?",
+                options: ["Para aceptar ciegamente el resultado de la IA", "Para interpretar el resultado, considerando el contexto del paciente", "Para programar el algoritmo", "La IA no se usa en diagnóstico"],
+                answer: "Para interpretar el resultado, considerando el contexto del paciente"
+            }
+        ];
+
+        let shuffledQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        const questionArea = document.getElementById('question-area');
+        const resultArea = document.getElementById('result-area');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const progressText = document.getElementById('progress-text');
+        const finalScoreText = document.getElementById('final-score');
+        const categoryBadge = document.getElementById('category-badge');
+
+        function startGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            resultArea.classList.add('hidden');
+            questionArea.classList.remove('hidden');
+            nextBtn.classList.add('hidden');
+            shuffledQuestions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
+            showQuestion();
+        }
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = shuffledQuestions[currentQuestionIndex];
+            questionText.innerText = currentQuestion.question;
+            categoryBadge.innerText = currentQuestion.category;
+            progressText.innerText = `Pregunta ${currentQuestionIndex + 1} de ${shuffledQuestions.length}`;
+
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.innerText = option;
+                button.classList.add('option-btn', 'w-full', 'p-4', 'border-2', 'rounded-lg', 'text-left', 'bg-gray-50', 'hover:bg-gray-100', 'border-gray-200');
+                button.addEventListener('click', selectAnswer);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function resetState() {
+            nextBtn.classList.add('hidden');
+            while (optionsContainer.firstChild) {
+                optionsContainer.removeChild(optionsContainer.firstChild);
+            }
+        }
+
+        function selectAnswer(e) {
+            const selectedBtn = e.target;
+            const correct = selectedBtn.innerText === shuffledQuestions[currentQuestionIndex].answer;
+
+            if (correct) {
+                score++;
+                selectedBtn.classList.add('correct');
+            } else {
+                selectedBtn.classList.add('incorrect');
+            }
+
+            Array.from(optionsContainer.children).forEach(button => {
+                if (button.innerText === shuffledQuestions[currentQuestionIndex].answer) {
+                    if(!correct) button.classList.add('correct');
+                }
+                button.classList.add('disabled');
+            });
+
+            if (shuffledQuestions.length > currentQuestionIndex + 1) {
+                nextBtn.classList.remove('hidden');
+            } else {
+                setTimeout(showResults, 1200);
+            }
+        }
+
+        function showResults() {
+            questionArea.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+            finalScoreText.innerText = `${score} / ${shuffledQuestions.length}`;
+        }
+
+        function handleNextButton() {
+            currentQuestionIndex++;
+            showQuestion();
+        }
+
+        nextBtn.addEventListener('click', handleNextButton);
+        restartBtn.addEventListener('click', startGame);
+
+        startGame();
+
+    </script>
+</body>
+</html>
+

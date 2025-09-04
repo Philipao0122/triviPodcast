@@ -1,0 +1,13 @@
+{
+  "name": "trivia-podcast",
+  "version": "1.0.0",
+  "description": "Trivia sobre Habilidades Blandas y IA",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vite": "^4.4.0"
+  }
+}
